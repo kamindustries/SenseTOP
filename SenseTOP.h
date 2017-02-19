@@ -1,12 +1,12 @@
 /* Shared Use License: This file is owned by Derivative Inc. (Derivative) and
- * can only be used, and/or modified for use, in conjunction with 
- * Derivative's TouchDesigner software, and only if you are a licensee who has
- * accepted Derivative's TouchDesigner license or assignment agreement (which
- * also govern the use of this file).  You may share a modified version of this
- * file with another authorized licensee of Derivative's TouchDesigner software.
- * Otherwise, no redistribution or sharing of this file, with or without
- * modification, is permitted.
- */
+* can only be used, and/or modified for use, in conjunction with
+* Derivative's TouchDesigner software, and only if you are a licensee who has
+* accepted Derivative's TouchDesigner license or assignment agreement (which
+* also govern the use of this file).  You may share a modified version of this
+* file with another authorized licensee of Derivative's TouchDesigner software.
+* Otherwise, no redistribution or sharing of this file, with or without
+* modification, is permitted.
+*/
 
 #include "TOP_CPlusPlusBase.h"
 #include <string>
@@ -17,7 +17,7 @@
 #include <mutex>
 #include "pxcsensemanager.h"
 #include "pxccapturemanager.h"
-
+#include "UiHelper.h"
 
 class SenseTOP : public TOP_CPlusPlusBase
 {
@@ -30,26 +30,27 @@ public:
 
 
 	virtual void		execute(const TOP_OutputFormatSpecs*,
-								OP_Inputs*,
-								TOP_Context *context) override;
+		OP_Inputs*,
+		TOP_Context *context) override;
 
 
 	virtual int32_t		getNumInfoCHOPChans() override;
 	virtual void		getInfoCHOPChan(int32_t index,
-										OP_InfoCHOPChan *chan) override;
+		OP_InfoCHOPChan *chan) override;
 
 	virtual bool		getInfoDATSize(OP_InfoDATSize *infoSize) override;
 	virtual void		getInfoDATEntries(int32_t index,
-											int32_t nEntries,
-											OP_InfoDATEntries *entries) override;
+										int32_t nEntries,
+										OP_InfoDATEntries *entries) override;
 
-    virtual const char* getErrorString() override;
+	virtual const char* getErrorString() override;
 
 	virtual void		setupParameters(OP_ParameterManager *manager) override;
 	virtual void		pulsePressed(const char *name) override;
 
 	PXCSenseManager *m_senseManager;
 	PXCCapture::Device *m_device;
+	UiHelper ui;
 
 	const int WIDTH = 640;
 	const int HEIGHT = 480;
@@ -62,7 +63,6 @@ public:
 	float* m_image;
 
 	bool captureThread();
-	void userUpdate(OP_Inputs* inputs);
 
 	// For threading
 	std::vector<std::thread> threads;
@@ -76,7 +76,7 @@ public:
 
 
 private:
-    void                setupGL();
+	void                setupGL();
 	// We don't need to store this pointer, but we do for the example.
 	// The OP_NodeInfo class store information about the node that's using
 	// this instance of the class (like its name).
@@ -87,9 +87,9 @@ private:
 	int32_t					 myExecuteCount;
 	double					 myRotation;
 
-    const char              *myError;
+	const char              *myError;
 
-    bool                    didGLSetup;
+	bool                    didGLSetup;
 
 
 };

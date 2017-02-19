@@ -162,8 +162,7 @@
     <ClCompile Include="GL\glewinfo.c" />
     <ClCompile Include="Matrix.cpp" />
     <ClCompile Include="SenseTOP.cpp" />
-    <ClCompile Include="Program.cpp" />
-    <ClCompile Include="Shape.cpp" />
+    <ClCompile Include="UiHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GL\glew.h" />
@@ -171,10 +170,9 @@
     <ClInclude Include="GL_Extensions.h" />
     <ClInclude Include="Matrix.h" />
     <ClInclude Include="SenseTOP.h" />
-    <ClInclude Include="Program.h" />
-    <ClInclude Include="Shape.h" />
     <ClInclude Include="TOP_CPlusPlusBase.h" />
     <ClInclude Include="CPlusPlus_Common.h" />
+    <ClInclude Include="UiHelper.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

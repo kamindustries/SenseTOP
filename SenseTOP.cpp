@@ -74,7 +74,7 @@ DestroyTOPInstance(TOP_CPlusPlusBase* instance, TOP_Context *context)
 
 SenseTOP::SenseTOP(const OP_NodeInfo* info, TOP_Context *context)
 : myNodeInfo(info), myExecuteCount(0), myRotation(0.0), myError(nullptr),
-    myProgram(), myDidSetup(false), myModelViewUniform(-1), myColorUniform(-1)
+    didGLSetup(false)
 {
 
 #ifdef WIN32
@@ -139,35 +139,6 @@ SenseTOP::getOutputFormat(TOP_OutputFormat* format)
 	return false;
 }
 
-// Update device settings from user input
-void 
-SenseTOP::userUpdate(OP_Inputs* inputs)
-{
-	pxcI32 u_accuracy = inputs->getParInt("Accuracy");
-	if (m_device->QueryIVCAMAccuracy() != u_accuracy) {
-		m_device->SetIVCAMAccuracy((PXCCapture::Device::IVCAMAccuracy)u_accuracy);
-		//printf("Set accuracy: %d\n", m_device->QueryIVCAMAccuracy());
-	}
-
-	pxcI32 u_power = inputs->getParInt("Laserpower");
-	if (m_device->QueryIVCAMLaserPower() != u_power) {
-		m_device->SetIVCAMLaserPower((PXCCapture::Device::IVCAMAccuracy)u_power);
-		//printf("Set laser power: %d\n", m_device->QueryIVCAMLaserPower());
-	}
-
-	pxcI32 u_filterOption = inputs->getParInt("Filteroption");
-	if (m_device->QueryIVCAMFilterOption() != u_filterOption) {
-		m_device->SetIVCAMFilterOption(u_filterOption);
-		//printf("Set filter option: %d\n", m_device->QueryIVCAMFilterOption());
-	}
-
-	pxcI32 u_motion = inputs->getParInt("Motiontradeoff");
-	if (m_device->QueryIVCAMMotionRangeTradeOff() != u_motion) {
-		m_device->SetIVCAMMotionRangeTradeOff(u_motion);
-		//printf("Set motion range tradeoff: %d\n", m_device->QueryIVCAMMotionRangeTradeOff());
-	}
-}
-
 // Threaded image capture from device
 bool 
 SenseTOP::captureThread()
@@ -218,7 +189,7 @@ SenseTOP::execute(const TOP_OutputFormatSpecs* outputFormat ,
 	myExecuteCount++;
 
 	// Update settings from custom parameters
-	userUpdate(inputs);
+	if (myExecuteCount%10 == 0) ui.userUpdate(inputs);
 
 	int width = outputFormat->width;
 	int height = outputFormat->height;
@@ -226,8 +197,6 @@ SenseTOP::execute(const TOP_OutputFormatSpecs* outputFormat ,
     context->beginGLCommands();
     
     setupGL();
-
-
 
     if (!myError)
     {
@@ -275,100 +244,6 @@ SenseTOP::execute(const TOP_OutputFormatSpecs* outputFormat ,
 
 }
 
-int32_t
-SenseTOP::getNumInfoCHOPChans()
-{
-	// We return the number of channel we want to output to any Info CHOP
-	// connected to the TOP. In this example we are just going to send one channel.
-	return 2;
-}
-
-void
-SenseTOP::getInfoCHOPChan(int32_t index,
-										OP_InfoCHOPChan* chan)
-{
-	// This function will be called once for each channel we said we'd want to return
-	// In this example it'll only be called once.
-
-	if (index == 0)
-	{
-		chan->name = "executeCount";
-		chan->value = (float)myExecuteCount;
-	}
-
-	if (index == 1)
-	{
-		chan->name = "rotation";
-		chan->value = (float)myRotation;
-	}
-}
-
-bool		
-SenseTOP::getInfoDATSize(OP_InfoDATSize* infoSize)
-{
-	infoSize->rows = 2;
-	infoSize->cols = 2;
-	// Setting this to false means we'll be assigning values to the table
-	// one row at a time. True means we'll do it one column at a time.
-	infoSize->byColumn = false;
-	return true;
-}
-
-void
-SenseTOP::getInfoDATEntries(int32_t index,
-										int32_t nEntries,
-										OP_InfoDATEntries* entries)
-{
-	// It's safe to use static buffers here because Touch will make it's own
-	// copies of the strings immediately after this call returns
-	// (so the buffers can be reuse for each column/row)
-	static char tempBuffer1[4096];
-	static char tempBuffer2[4096];
-
-	if (index == 0)
-	{
-		// Set the value for the first column
-#ifdef WIN32
-		strcpy_s(tempBuffer1, "executeCount");
-#else // macOS
-        strlcpy(tempBuffer1, "executeCount", sizeof(tempBuffer1));
-#endif
-		entries->values[0] = tempBuffer1;
-
-		// Set the value for the second column
-#ifdef WIN32
-		sprintf_s(tempBuffer2, "%d", myExecuteCount);
-#else // macOS
-        snprintf(tempBuffer2, sizeof(tempBuffer2), "%d", myExecuteCount);
-#endif
-		entries->values[1] = tempBuffer2;
-	}
-
-	if (index == 1)
-	{
-		// Set the value for the first column
-#ifdef WIN32
-		strcpy_s(tempBuffer1, "rotation");
-#else // macOS
-		strlcpy(tempBuffer1, "rotation", sizeof(tempBuffer1));
-#endif
-		entries->values[0] = tempBuffer1;
-
-		// Set the value for the second column
-#ifdef WIN32
-		sprintf_s(tempBuffer2, "%g", myRotation);
-#else // macOS
-		snprintf(tempBuffer2, sizeof(tempBuffer2), "%g", myRotation);
-#endif
-		entries->values[1] = tempBuffer2;
-	}
-}
-
-const char *
-SenseTOP::getErrorString()
-{
-    return myError;
-}
 
 void
 SenseTOP::setupParameters(OP_ParameterManager* manager)
@@ -384,13 +259,7 @@ SenseTOP::setupParameters(OP_ParameterManager* manager)
 	// Creates an instance of the PXCSenseManager */
 	m_senseManager = PXCSenseManager::CreateInstance();
 
-	////PXCVideoModule::DataDesc desc = {};
-	////desc.deviceInfo.streams = PXCCapture::STREAM_TYPE_COLOR | PXCCapture::STREAM_TYPE_DEPTH;	
-	////pp->EnableStreams(&desc);
-
-	////pp->EnableStream(PXCCapture::STREAM_TYPE_DEPTH);
-	////pp->EnableStream(PXCCapture::STREAM_TYPE_DEPTH, 640, 480);
-	m_senseManager->EnableStream(PXCCapture::STREAM_TYPE_DEPTH, 640, 480);
+	m_senseManager->EnableStream(PXCCapture::STREAM_TYPE_DEPTH , 640, 480);
 	m_senseManager->Init();
 	printf("SenseManager initalized\n");
 
@@ -411,67 +280,9 @@ SenseTOP::setupParameters(OP_ParameterManager* manager)
 		startedThread = true;
 	}
 
-	m_device->SetColorAutoExposure(false);
-	printf("color auto exp: %d\n", m_device->QueryColorAutoExposure());
+	// Set up TOP parameters
+	ui.init(manager, m_device);
 
-	// Custom parameters
-	{
-		// Accuracy
-		{
-			OP_NumericParameter	np;
-
-			np.name = "Accuracy";
-			np.label = "Accuracy";
-			np.defaultValues[0] = 1;
-			np.minSliders[0] = 1;
-			np.maxSliders[0] = 3;
-
-			OP_ParAppendResult res = manager->appendInt(np);
-			assert(res == OP_ParAppendResult::Success);
-		}
-
-		// Laser power
-		{
-			OP_NumericParameter	np;
-
-			np.name = "Laserpower";
-			np.label = "Laser power";
-			np.defaultValues[0] = 10;
-			np.minSliders[0] = 0;
-			np.maxSliders[0] = 16;
-
-			OP_ParAppendResult res = manager->appendInt(np);
-			assert(res == OP_ParAppendResult::Success);
-		}
-
-		// Filter option
-		{
-			OP_NumericParameter	np;
-
-			np.name = "Filteroption";
-			np.label = "Filter option";
-			np.defaultValues[0] = 4;
-			np.minSliders[0] = 0;
-			np.maxSliders[0] = 7;
-
-			OP_ParAppendResult res = manager->appendInt(np);
-			assert(res == OP_ParAppendResult::Success);
-		}
-
-		// Motion range tradeoff
-		{
-			OP_NumericParameter	np;
-
-			np.name = "Motiontradeoff";
-			np.label = "Motion tradeoff";
-			np.defaultValues[0] = 10;
-			np.minSliders[0] = 0;
-			np.maxSliders[0] = 100;
-
-			OP_ParAppendResult res = manager->appendInt(np);
-			assert(res == OP_ParAppendResult::Success);
-		}
-	}
 }
 
 void
@@ -509,4 +320,99 @@ void SenseTOP::setupGL()
 	}
 
 
+}
+
+int32_t
+SenseTOP::getNumInfoCHOPChans()
+{
+	// We return the number of channel we want to output to any Info CHOP
+	// connected to the TOP. In this example we are just going to send one channel.
+	return 2;
+}
+
+void
+SenseTOP::getInfoCHOPChan(int32_t index,
+	OP_InfoCHOPChan* chan)
+{
+	// This function will be called once for each channel we said we'd want to return
+	// In this example it'll only be called once.
+
+	if (index == 0)
+	{
+		chan->name = "executeCount";
+		chan->value = (float)myExecuteCount;
+	}
+
+	if (index == 1)
+	{
+		chan->name = "rotation";
+		chan->value = (float)myRotation;
+	}
+}
+
+bool
+SenseTOP::getInfoDATSize(OP_InfoDATSize* infoSize)
+{
+	infoSize->rows = 2;
+	infoSize->cols = 2;
+	// Setting this to false means we'll be assigning values to the table
+	// one row at a time. True means we'll do it one column at a time.
+	infoSize->byColumn = false;
+	return true;
+}
+
+void
+SenseTOP::getInfoDATEntries(int32_t index,
+	int32_t nEntries,
+	OP_InfoDATEntries* entries)
+{
+	// It's safe to use static buffers here because Touch will make it's own
+	// copies of the strings immediately after this call returns
+	// (so the buffers can be reuse for each column/row)
+	static char tempBuffer1[4096];
+	static char tempBuffer2[4096];
+
+	if (index == 0)
+	{
+		// Set the value for the first column
+#ifdef WIN32
+		strcpy_s(tempBuffer1, "executeCount");
+#else // macOS
+		strlcpy(tempBuffer1, "executeCount", sizeof(tempBuffer1));
+#endif
+		entries->values[0] = tempBuffer1;
+
+		// Set the value for the second column
+#ifdef WIN32
+		sprintf_s(tempBuffer2, "%d", myExecuteCount);
+#else // macOS
+		snprintf(tempBuffer2, sizeof(tempBuffer2), "%d", myExecuteCount);
+#endif
+		entries->values[1] = tempBuffer2;
+	}
+
+	if (index == 1)
+	{
+		// Set the value for the first column
+#ifdef WIN32
+		strcpy_s(tempBuffer1, "rotation");
+#else // macOS
+		strlcpy(tempBuffer1, "rotation", sizeof(tempBuffer1));
+#endif
+		entries->values[0] = tempBuffer1;
+
+		// Set the value for the second column
+#ifdef WIN32
+		sprintf_s(tempBuffer2, "%g", myRotation);
+#else // macOS
+		snprintf(tempBuffer2, sizeof(tempBuffer2), "%g", myRotation);
+#endif
+		entries->values[1] = tempBuffer2;
+	}
+}
+
+const char *
+SenseTOP::getErrorString()
+{
+	return myError;
 }
