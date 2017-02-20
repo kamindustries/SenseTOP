@@ -6,6 +6,8 @@ UiHelper::UiHelper():isInit(false), firstUpdate(false)
 	pageName[0] = "Device";
 }
 
+UiHelper::~UiHelper() {}
+
 void
 UiHelper::init(OP_ParameterManager* manager, PXCCapture::Device *in_device)
 {
@@ -108,15 +110,12 @@ UiHelper::init(OP_ParameterManager* manager, PXCCapture::Device *in_device)
 
 // Update device settings from user input
 void
-UiHelper::userUpdate(OP_Inputs* inputs)
+UiHelper::update(OP_Inputs* inputs)
 {
 	// First time disable spacers
 	if (!firstUpdate) {
 		inputs->enablePar("Spacer1", false);
-
-		//printf("fps min: %f\n", sps->depth.frameRate.min);
-		//printf("fps max: %f\n", sps->depth.frameRate.max);
-		//printf("\n");
+		firstUpdate = true;
 	}
 
 	m_accuracy = inputs->getParInt("Accuracy");
@@ -137,7 +136,6 @@ UiHelper::userUpdate(OP_Inputs* inputs)
 	m_motion = inputs->getParInt("Motiontradeoff");
 	if (m_device->QueryIVCAMMotionRangeTradeOff() != m_motion) {
 		m_device->SetIVCAMMotionRangeTradeOff(m_motion);
-		printf("mtf\n");
 	}
 
 	m_autoexp = inputs->getParInt("Colorautoexp");

@@ -189,7 +189,7 @@ SenseTOP::execute(const TOP_OutputFormatSpecs* outputFormat ,
 	myExecuteCount++;
 
 	// Update settings from custom parameters
-	if (myExecuteCount%10 == 0) ui.userUpdate(inputs);
+	if (myExecuteCount%10 == 0) ui.update(inputs);
 
 	int width = outputFormat->width;
 	int height = outputFormat->height;

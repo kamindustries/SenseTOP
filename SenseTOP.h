@@ -30,13 +30,12 @@ public:
 
 
 	virtual void		execute(const TOP_OutputFormatSpecs*,
-		OP_Inputs*,
-		TOP_Context *context) override;
+								OP_Inputs*, TOP_Context *context) override;
 
 
 	virtual int32_t		getNumInfoCHOPChans() override;
 	virtual void		getInfoCHOPChan(int32_t index,
-		OP_InfoCHOPChan *chan) override;
+										OP_InfoCHOPChan *chan) override;
 
 	virtual bool		getInfoDATSize(OP_InfoDATSize *infoSize) override;
 	virtual void		getInfoDATEntries(int32_t index,

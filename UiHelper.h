@@ -10,11 +10,13 @@ class UiHelper
 
 public:
 	UiHelper();
+	virtual ~UiHelper();
+
 	bool isInit;
 	bool firstUpdate;
 
 	void init(OP_ParameterManager* manager, PXCCapture::Device *in_device);
-	void userUpdate(OP_Inputs* inputs);
+	void update(OP_Inputs* inputs);
 
 	const char* pageName[1];
 
